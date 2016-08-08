@@ -72,7 +72,8 @@ get_report_interval() ->
 update(Name, Change) when is_tuple(Name)->
     update(tuple_to_list(Name), Change);
 update(Name, Change) ->
-    exometer:update(Name, Change).
+    ok.
+    %exometer:update(Name, Change).
 
 -spec create(list(), term()) -> ok | {error, term()}.
 create(Metric, Spec) ->
@@ -282,12 +283,13 @@ ensure_metric(Metric, Type) ->
     ensure_metric(Metric, Type, Type).
 
 ensure_metric(Metric, Type, ShortType) when is_list(Metric) ->
-    %% the split into ShortType and Type is needed because function metrics are
-    %% defined as tuples (that is Type), while exometer:info returns only 'function'
-    case exometer:info(Metric, type) of
-        ShortType -> {ok, already_present};
-        undefined -> exometer:new(Metric, Type)
-    end.
+    ok.
+%    %% the split into ShortType and Type is needed because function metrics are
+%    %% defined as tuples (that is Type), while exometer:info returns only 'function'
+%    case exometer:info(Metric, type) of
+%        ShortType -> {ok, already_present};
+%        undefined -> exometer:new(Metric, Type)
+%    end.
 
 -spec metrics_hooks('add' | 'delete', ejabberd:server()) -> 'ok'.
 metrics_hooks(Op, Host) ->

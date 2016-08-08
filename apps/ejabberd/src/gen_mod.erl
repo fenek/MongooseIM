@@ -169,15 +169,16 @@ generate_fun_body(true, BaseModule, RealBackendModule, F, Args) ->
      "    Result.\n"].
 
 ensure_backend_metrics(Module, Ops) ->
-    EnsureFun = fun(Op) ->
-        case exometer:info(?METRIC(Module, Op), type) of
-            undefined ->
-                exometer:new(?METRIC(Module, Op), histogram);
-            _ ->
-                ok
-        end
-    end,
-    lists:foreach(EnsureFun, Ops).
+    ok.
+    %EnsureFun = fun(Op) ->
+    %    case exometer:info(?METRIC(Module, Op), type) of
+    %        undefined ->
+    %            exometer:new(?METRIC(Module, Op), histogram);
+    %        _ ->
+    %            ok
+    %    end
+    %end,
+    %lists:foreach(EnsureFun, Ops).
 
 -spec is_app_running(_) -> boolean().
 is_app_running(AppName) ->

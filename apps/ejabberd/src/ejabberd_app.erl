@@ -65,7 +65,7 @@ start(normal, _Args) ->
     %%ejabberd_debug:eprof_start(),
     %%ejabberd_debug:fprof_start(),
     start_modules(),
-    mongoose_metrics:init(),
+%    mongoose_metrics:init(),
     ejabberd_listener:start_listeners(),
     ejabberd_admin:start(),
     ?INFO_MSG("ejabberd ~s is started in the node ~p", [?VERSION, node()]),
@@ -82,7 +82,7 @@ prep_stop(State) ->
     broadcast_c2s_shutdown(),
     mod_websockets:stop(),
     timer:sleep(5000),
-    mongoose_metrics:remove_all_metrics(),
+%    mongoose_metrics:remove_all_metrics(),
     State.
 
 %% All the processes were killed when this function is called
