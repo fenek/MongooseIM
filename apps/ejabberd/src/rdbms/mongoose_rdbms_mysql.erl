@@ -69,6 +69,8 @@ execute(Connection, StatementRef, Params, _Timeout) ->
 db_opts({mysql, Server, DB, User, Pass}) ->
     db_opts({mysql, Server, ?MYSQL_PORT, DB, User, Pass});
 db_opts({mysql, Server, Port, DB, User, Pass}) when is_integer(Port) ->
+    db_opts({mysql, Server, Port, DB, User, Pass, []});
+db_opts({mysql, Server, Port, DB, User, Pass, ExtraArgs}) when is_integer(Port) ->
     [
      {host, Server},
      {port, Port},
@@ -76,7 +78,7 @@ db_opts({mysql, Server, Port, DB, User, Pass}) when is_integer(Port) ->
      {password, Pass},
      {database, DB},
      {found_rows, true}
-    ].
+    | ExtraArgs].
 
 %% @doc Convert MySQL query result to Erlang ODBC result formalism
 -spec mysql_to_odbc(mysql:query_result(), Conn :: term()) -> mongoose_rdbms:query_result().
