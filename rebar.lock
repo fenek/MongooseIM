@@ -123,7 +123,7 @@
   0},
  {<<"mysql">>,
   {git,"git://github.com/fenek/mysql-otp.git",
-       {ref,"f8698fa0c5ca825c0aa14280162be00f646aca64"}},
+       {ref,"d3dbe77a21ddc35b9482829b1c19373c1370ee97"}},
   0},
  {<<"observer_cli">>,{pkg,<<"observer_cli">>,<<"1.1.0">>},0},
  {<<"p1_utils">>,{pkg,<<"p1_utils">>,<<"1.0.6">>},1},
