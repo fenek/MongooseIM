@@ -178,10 +178,9 @@ microseconds_to_datetime(MicroSeconds) when is_integer(MicroSeconds) ->
 generate_message_id() ->
     {ok, NodeId} = ejabberd_node_id:node_id(),
     %% Unique enough
-    {T1, T2, T3} = p1_time_compat:timestamp(),
-    ImprovedTS = {T1, T2,
-                  (T3 div 1000) * 1000 + p1_time_compat:unique_integer([positive]) rem 1000 },
-    encode_compact_uuid(now_to_microseconds(ImprovedTS), NodeId).
+    TS = p1_time_compat:os_system_time(milli_seconds),
+    ImprovedTS = TS + (p1_time_compat:unique_integer([positive]) rem 1000),
+    encode_compact_uuid(ImprovedTS, NodeId).
 
 
 %% @doc Create a message ID (UID).
