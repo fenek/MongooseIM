@@ -179,7 +179,7 @@ generate_message_id() ->
     {ok, NodeId} = ejabberd_node_id:node_id(),
     %% Unique enough
     TS = p1_time_compat:os_system_time(milli_seconds),
-    ImprovedTS = TS + (p1_time_compat:unique_integer([positive]) rem 1000),
+    ImprovedTS = TS * 1000 + (p1_time_compat:unique_integer([positive]) rem 1000),
     encode_compact_uuid(ImprovedTS, NodeId).
 
 
