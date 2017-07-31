@@ -218,7 +218,9 @@ escape_format(HostOrPool) ->
     Pool = mongoose_rdbms_sup:pool(HostOrPool),
     mongoose_rdbms_backend:escape_format(Pool).
 
--spec escape_binary('hex' | 'simple_escape', binary()) -> binary() | string().
+-spec escape_binary(mysql_hex | hex | simple_escape, binary()) -> binary() | string().
+escape_binary(mysql_hex, Bin) when is_binary(Bin) ->
+    bin_to_hex:bin_to_hex(Bin);
 escape_binary(hex, Bin) when is_binary(Bin) ->
     <<"\\\\x", (bin_to_hex:bin_to_hex(Bin))/binary>>;
 escape_binary(mssql_hex, Bin) when is_binary(Bin) ->

@@ -146,10 +146,9 @@ archive_message_unsafe(Host, MessID, RoomID, FromNick, Packet) ->
     SRoomID = integer_to_list(RoomID),
     SFromNick = mongoose_rdbms:escape(FromNick),
     Data = packet_to_stored_binary(Host, Packet),
-    EscFormat = mongoose_rdbms:escape_format(Host),
-    SData = mongoose_rdbms:escape_binary(EscFormat, Data),
+    SData = mongoose_rdbms:escape_binary(mysql_hex, Data),
     SMessID = integer_to_list(MessID),
-    TextBody = mod_mam_utils:packet_to_search_body(mod_mam_muc, Host, Packet),
+    TextBody = unicode:characters_to_binary(mod_mam_utils:packet_to_search_body(mod_mam_muc, Host, Packet)),
     STextBody = mongoose_rdbms:escape(TextBody),
     write_message(Host, SMessID, SRoomID, SFromNick, SData, STextBody).
 
@@ -164,7 +163,7 @@ write_message(Host, SMessID, SRoomID, SFromNick, SData, STextBody) ->
       ["INSERT INTO ", "mam_muc_message", " ",
               "(id, room_id, nick_name, message, search_body) "
        "VALUES ('", SMessID, "', '", SRoomID, "', "
-               "'", SFromNick, "', '", SData, "', '", STextBody, "')"]),
+               "'", SFromNick, "', X'", SData, "', '", STextBody, "')"]),
     ok.
 
 
@@ -176,7 +175,7 @@ prepare_message(Host, MessID, RoomID,
                 _RemJID=#jid{},
                 _SrcJID=#jid{lresource=FromNick}, incoming, Packet) ->
     Data = packet_to_stored_binary(Host, Packet),
-    TextBody = mod_mam_utils:packet_to_search_body(mod_mam_muc, Host, Packet),
+    TextBody = unicode:characters_to_binary(mod_mam_utils:packet_to_search_body(mod_mam_muc, Host, Packet)),
     [MessID, RoomID, FromNick, Data, TextBody].
 
 
