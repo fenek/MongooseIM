@@ -224,10 +224,9 @@ do_archive_message(_Result, Host, MessID, UserID,
     SDir = binary_to_list(encode_direction(Dir)),
     SRemLResource = mongoose_rdbms:escape(RemLResource),
     Data = packet_to_stored_binary(Host, Packet),
-    TextBody = mod_mam_utils:packet_to_search_body(mod_mam, Host, Packet),
+    TextBody = unicode:characters_to_binary(mod_mam_utils:packet_to_search_body(mod_mam, Host, Packet)),
     STextBody = mongoose_rdbms:escape(TextBody),
-    EscFormat = mongoose_rdbms:escape_format(Host),
-    SData = mongoose_rdbms:escape_binary(EscFormat, Data),
+    SData = mongoose_rdbms:escape_binary(mysql_hex, Data),
     SMessID = integer_to_list(MessID),
     Table = "mam_message",
     write_message(Host, Table, SMessID, SUserID, SBareRemJID,
@@ -248,7 +247,7 @@ write_message(Host, Table, SMessID, SUserID, SBareRemJID,
            "from_jid, message, search_body) "
            "VALUES ('", SMessID, "', '", SUserID, "', '", SBareRemJID, "', "
            "'", SRemLResource, "', '", SDir, "', ",
-           "'", SSrcJID, "', '", SData, "', '", STextBody, "');"]),
+           "'", SSrcJID, "', X'", SData, "', '", STextBody, "');"]),
     ok.
 
 prepare_message(Host, MessID, UserID, LocJID = #jid{}, RemJID = #jid{lresource = RemLResource},
@@ -257,8 +256,8 @@ prepare_message(Host, MessID, UserID, LocJID = #jid{}, RemJID = #jid{lresource =
     SSrcJID = jid_to_stored_binary(Host, LocJID, SrcJID),
     SDir = encode_direction(Dir),
     Data = packet_to_stored_binary(Host, Packet),
-    TextBody = mod_mam_utils:packet_to_search_body(mod_mam, Host, Packet),
-    [MessID, UserID, SBareRemJID, RemLResource, SDir, SSrcJID, Data, TextBody].
+    TextBody = unicode:characters_to_binary(mod_mam_utils:packet_to_search_body(mod_mam, Host, Packet)),
+    [MessID, UserID, SBareRemJID, RemLResource, SDir, SSrcJID, <<"_binary", Data/binary>>, TextBody].
 
 -spec prepare_insert(Name :: atom(), NumRows :: pos_integer()) -> ok.
 prepare_insert(Name, NumRows) ->
