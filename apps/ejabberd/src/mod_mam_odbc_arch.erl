@@ -257,7 +257,7 @@ prepare_message(Host, MessID, UserID, LocJID = #jid{}, RemJID = #jid{lresource =
     SDir = encode_direction(Dir),
     Data = packet_to_stored_binary(Host, Packet),
     TextBody = unicode:characters_to_binary(mod_mam_utils:packet_to_search_body(mod_mam, Host, Packet)),
-    [MessID, UserID, SBareRemJID, RemLResource, SDir, SSrcJID, <<"_binary", Data/binary>>, TextBody].
+    [MessID, UserID, SBareRemJID, RemLResource, SDir, SSrcJID, Data, TextBody].
 
 -spec prepare_insert(Name :: atom(), NumRows :: pos_integer()) -> ok.
 prepare_insert(Name, NumRows) ->
