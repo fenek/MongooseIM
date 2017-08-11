@@ -19,6 +19,7 @@
 
 -- Needs MySQL (at least 4.0.x) with innodb back-end
 
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     username varchar(250) PRIMARY KEY,
     password text NOT NULL,
@@ -27,6 +28,7 @@ CREATE TABLE users (
 ) CHARACTER SET utf8;
 
 
+DROP TABLE IF EXISTS last;
 CREATE TABLE last (
     username varchar(250) PRIMARY KEY,
     seconds int NOT NULL,
@@ -35,7 +37,7 @@ CREATE TABLE last (
 
 CREATE INDEX i_last_seconds ON last(seconds);
 
-
+DROP TABLE IF EXISTS rosterusers;
 CREATE TABLE rosterusers (
     username varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
@@ -47,12 +49,13 @@ CREATE TABLE rosterusers (
     subscribe text NOT NULL,
     type text,
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) CHARACTER SET utf8;
+) ;
 
 CREATE UNIQUE INDEX i_rosteru_user_jid ON rosterusers(username(75), jid(75));
-CREATE INDEX i_rosteru_username ON rosterusers(username);
-CREATE INDEX i_rosteru_jid ON rosterusers(jid);
+CREATE INDEX i_rosteru_username ON rosterusers(username(75));
+CREATE INDEX i_rosteru_jid ON rosterusers(jid(75));
 
+DROP TABLE IF EXISTS rostergroups;
 CREATE TABLE rostergroups (
     username varchar(250) NOT NULL,
     jid varchar(250) NOT NULL,
@@ -62,6 +65,7 @@ CREATE TABLE rostergroups (
 CREATE INDEX pk_rosterg_user_jid ON rostergroups(username(75), jid(75));
 
 
+DROP TABLE IF EXISTS vcard;
 CREATE TABLE vcard (
     username varchar(150),
     server varchar(150),
@@ -71,6 +75,7 @@ CREATE TABLE vcard (
 ) CHARACTER SET utf8;
 
 
+DROP TABLE IF EXISTS vcard_search;
 CREATE TABLE vcard_search (
     username varchar(150) NOT NULL,
     lusername varchar(100),
@@ -113,11 +118,13 @@ CREATE INDEX i_vcard_search_lemail    ON vcard_search(lemail);
 CREATE INDEX i_vcard_search_lorgname  ON vcard_search(lorgname);
 CREATE INDEX i_vcard_search_lorgunit  ON vcard_search(lorgunit);
 
+DROP TABLE IF EXISTS privacy_default_list;
 CREATE TABLE privacy_default_list (
     username varchar(250) PRIMARY KEY,
     name varchar(250) NOT NULL
 ) CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS privacy_list;
 CREATE TABLE privacy_list (
     username varchar(250) NOT NULL,
     name varchar(250) NOT NULL,
@@ -126,6 +133,7 @@ CREATE TABLE privacy_list (
     PRIMARY KEY (username(75), name(75))
 ) CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS privacy_list_data;
 CREATE TABLE privacy_list_data (
     id bigint,
     t character(1) NOT NULL,
@@ -140,6 +148,7 @@ CREATE TABLE privacy_list_data (
     PRIMARY KEY (id, ord)
 ) CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS private_storage;
 CREATE TABLE private_storage (
     username varchar(250) NOT NULL,
     namespace varchar(250) NOT NULL,
@@ -150,7 +159,7 @@ CREATE TABLE private_storage (
 CREATE INDEX i_private_storage_username USING BTREE ON private_storage(username);
 CREATE UNIQUE INDEX i_private_storage_username_namespace USING BTREE ON private_storage(username(75), namespace(75));
 
--- Not tested in mysql
+DROP TABLE IF EXISTS roster_version;
 CREATE TABLE roster_version (
     username varchar(250) PRIMARY KEY,
     version text NOT NULL
@@ -188,6 +197,7 @@ CREATE TABLE roster_version (
 -- - message is stored as XML
 -- - remote_bare_jid is not "minified"
 -- To enable simple format pass {simple, true} as an option for mod_mam_odbc_arch
+DROP TABLE IF EXISTS mam_message;
 CREATE TABLE mam_message(
   -- Message UID (64 bits)
   -- A server-assigned UID that MUST be unique within the archive.
@@ -220,6 +230,7 @@ CREATE TABLE mam_message(
 -- http://dev.mysql.com/doc/refman/5.1/en/partitioning-hash.html
 
 
+DROP TABLE IF EXISTS mam_config;
 CREATE TABLE mam_config(
   user_id INT UNSIGNED NOT NULL,
   -- If empty, than it is a default behaviour.
@@ -231,6 +242,7 @@ CREATE TABLE mam_config(
   PRIMARY KEY (user_id, remote_jid)
 );
 
+DROP TABLE IF EXISTS mam_server_user;
 CREATE TABLE mam_server_user(
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   server    varchar(250) CHARACTER SET binary NOT NULL,
@@ -239,6 +251,7 @@ CREATE TABLE mam_server_user(
   CONSTRAINT uc_mam_server_user_name UNIQUE USING HASH (server, user_name)
 );
 
+DROP TABLE IF EXISTS mam_muc_message;
 CREATE TABLE mam_muc_message(
   -- Message UID
   -- A server-assigned UID that MUST be unique within the archive.
@@ -252,6 +265,7 @@ CREATE TABLE mam_muc_message(
   PRIMARY KEY (room_id, id)
 );
 
+DROP TABLE IF EXISTS offline_message;
 CREATE TABLE offline_message(
   id BIGINT UNSIGNED        NOT NULL AUTO_INCREMENT PRIMARY KEY,
   timestamp BIGINT UNSIGNED NOT NULL,
@@ -261,19 +275,21 @@ CREATE TABLE offline_message(
   from_jid  varchar(250)    NOT NULL,
   packet    blob            NOT NULL
 );
-CREATE INDEX i_offline_message USING BTREE ON offline_message(server, username, id);
+CREATE INDEX i_offline_message USING BTREE ON offline_message(server(75), username(75), id);
 
+DROP TABLE IF EXISTS muc_light_rooms;
 CREATE TABLE muc_light_rooms(
     id BIGINT UNSIGNED      NOT NULL AUTO_INCREMENT,
     luser VARCHAR(250)      NOT NULL,
     lserver VARCHAR(250)    NOT NULL,
     version VARCHAR(20)     NOT NULL,
-    PRIMARY KEY (lserver, luser),
+    PRIMARY KEY (lserver(75), luser(75)),
     UNIQUE KEY k_id USING HASH (id)
 );
 
 CREATE INDEX i_muc_light_rooms USING HASH ON muc_light_rooms(id);
 
+DROP TABLE IF EXISTS muc_light_occupants;
 CREATE TABLE muc_light_occupants(
     room_id BIGINT UNSIGNED NOT NULL REFERENCES muc_light_rooms(id),
     luser VARCHAR(250)      NOT NULL,
@@ -282,8 +298,9 @@ CREATE TABLE muc_light_occupants(
 );
 
 CREATE INDEX i_muc_light_occupants_id USING HASH ON muc_light_occupants(room_id);
-CREATE INDEX i_muc_light_occupants_us USING HASH ON muc_light_occupants(lserver, luser);
+CREATE INDEX i_muc_light_occupants_us USING HASH ON muc_light_occupants(lserver(75), luser(75));
 
+DROP TABLE IF EXISTS muc_light_config;
 CREATE TABLE muc_light_config(
     room_id BIGINT UNSIGNED NOT NULL REFERENCES muc_light_rooms(id),
     opt VARCHAR(100)        NOT NULL,
@@ -292,6 +309,7 @@ CREATE TABLE muc_light_config(
 
 CREATE INDEX i_muc_light_config USING HASH ON muc_light_config(room_id);
 
+DROP TABLE IF EXISTS muc_light_blocking;
 CREATE TABLE muc_light_blocking(
     luser VARCHAR(250)      NOT NULL,
     lserver VARCHAR(250)    NOT NULL,
@@ -299,5 +317,5 @@ CREATE TABLE muc_light_blocking(
     who VARCHAR(500)        NOT NULL
 );
 
-CREATE INDEX i_muc_light_blocking USING HASH ON muc_light_blocking(luser, lserver);
+CREATE INDEX i_muc_light_blocking USING HASH ON muc_light_blocking(luser(75), lserver(75));
 
