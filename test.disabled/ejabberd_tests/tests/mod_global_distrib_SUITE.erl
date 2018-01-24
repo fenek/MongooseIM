@@ -99,6 +99,9 @@ init_per_suite(Config) ->
         {{ok, _}, {ok, _}} ->
             ok = rpc(europe_node2, mongoose_cluster, join, [ct:get_config(europe_node1)]),
 
+            {_Module, Binary, Filename} = code:get_object_code(?MODULE),
+            rpc(europe_node1, code, load_binary, [?MODULE, Filename, Binary]),
+
             CertDir = filename:join(?config(data_dir, Config), "../../priv/ssl"),
             CertPath = canonicalize_path(filename:join(CertDir, "fake_cert.pem")),
             CACertPath = canonicalize_path(filename:join(CertDir, "cacert.pem")),
@@ -197,6 +200,10 @@ init_per_testcase(CaseName, Config)
     hide_node(europe_node2, Config),
     muc_helper:load_muc(<<"muc.localhost">>),
     escalus:init_per_testcase(CaseName, Config);
+init_per_testcase(test_in_order_messages_on_multiple_connections_with_bounce = CaseName, Config) ->
+    HandlerRef = ok,%rpc(europe_node1, ?MODULE, start_packet_forwarding, [self()]),
+    rpc(europe_node1, ejabberd_loglevel, set, [5]),
+    escalus:init_per_testcase(CaseName, [{handler_ref, HandlerRef} | Config]);
 init_per_testcase(CaseName, Config) ->
     escalus:init_per_testcase(CaseName, Config).
 
@@ -216,6 +223,11 @@ end_per_testcase(CN, Config) when CN == enable_new_endpoint_on_refresh;
     restart_receiver(asia_node),
     refresh_mappings(asia_node, Config),
     generic_end_per_testcase(CN, Config);
+end_per_testcase(test_in_order_messages_on_multiple_connections_with_bounce = CaseName, Config) ->
+%    HandlerRef = proplists:get_value(handler_ref, Config),
+%    ok = rpc(europe_node1, ?MODULE, stop_packet_forwarding, [HandlerRef]),
+    rpc(europe_node1, ejabberd_loglevel, set, [error]),
+    generic_end_per_testcase(CaseName, Config);
 end_per_testcase(CaseName, Config) ->
     generic_end_per_testcase(CaseName, Config).
 
@@ -738,6 +750,23 @@ closed_connection_is_removed_from_disabled(_Config) ->
                {[], [], []}, 5, 1000).
 
 %%--------------------------------------------------------------------
+%% Hook handler injection to ensure proper mapping windows
+%%--------------------------------------------------------------------
+
+start_packet_forwarding(Pid) ->
+    Handler = fun({From, To, _MongooseAcc, Packet} = Acc) ->
+                      Pid ! {packet_processed, jid:to_binary(From), jid:to_binary(To), Packet},
+                      Acc;
+                 (Acc) ->
+                      Acc
+              end,
+    ok = ejabberd_hooks:add(filter_packet, global, Handler, 999),
+    Handler.
+
+stop_packet_forwarding(Handler) ->
+    ejabberd_hooks:delete(filter_packet, global, Handler, 999).
+
+%%--------------------------------------------------------------------
 %% Test helpers
 %%--------------------------------------------------------------------
 
@@ -811,11 +840,14 @@ canonicalize_path(["." | Path], Acc) -> canonicalize_path(Path, Acc);
 canonicalize_path([Elem | Path], Acc) -> canonicalize_path(Path, [Elem | Acc]).
 
 send_steps(From, To, Max, ToHost) ->
+    flush_processed_packet_notifications(),
     next_send_step(From, To, 1, Max, Max div 10, true, ToHost).
 
 next_send_step(_From, _To, I, Max, _ToReset, _KnowsMapping, _ToHost) when I > Max -> ok;
 next_send_step(From, To, I, Max, 0, KnowsMapping, ToHost) ->
-    ct:print("Reset: I: ~B", [I]),
+    %ct:print("Reset: I: ~B", [I]),
+    % To ensure that these packets were processed in proper mapping availability window
+    %wait_for_processed_packets(Max div 10),
     case KnowsMapping of
         true -> delete_mapping(europe_node1, To);
         false -> set_mapping(europe_node1, To, ToHost)
@@ -826,6 +858,26 @@ next_send_step(From, To, I, Max, ToReset, KnowsMapping, ToHost) ->
     Stanza = escalus_stanza:chat_to(To, integer_to_binary(I)),
     escalus_client:send(From, Stanza),
     next_send_step(From, To, I + 1, Max, ToReset - 1, KnowsMapping, ToHost).
+    
+flush_processed_packet_notifications() ->
+    receive
+        _ ->
+            flush_processed_packet_notifications()
+    after
+        1000 ->
+            ok
+    end.
+
+wait_for_processed_packets(0) ->
+    ok;
+wait_for_processed_packets(PacketsLeft) ->
+    receive
+        {packet_processed, _From, _To, _Packet} ->
+            wait_for_processed_packets(PacketsLeft - 1)
+    after
+        5000 ->
+            ct:fail({packet_processing_timeout, PacketsLeft})
+    end.
 
 get_mapping(Node, Client) ->
     {FullJid, _BareJid} = jids(Client),
