@@ -20,7 +20,7 @@
 %{suites, "tests", cluster_commands_SUITE}.
 %{suites, "tests", conf_reload_SUITE}.
 %{suites, "tests", connect_SUITE}.
-%{suites, "tests", component_SUITE}.
+{suites, "tests", component_SUITE}.
 %{suites, "tests", disco_and_caps_SUITE}.
 %{suites, "tests", ejabberdctl_SUITE}.
 %{suites, "tests", last_SUITE}.
@@ -38,7 +38,7 @@
 %{suites, "tests", mod_ping_SUITE}.
 %{suites, "tests", mod_time_SUITE}.
 %{suites, "tests", mod_version_SUITE}.
-%{suites, "tests", muc_SUITE}.
+{suites, "tests", muc_SUITE}.
 %{suites, "tests", muc_light_SUITE}.
 %{suites, "tests", muc_light_legacy_SUITE}.
 %{suites, "tests", muc_http_api_SUITE}.
@@ -59,7 +59,7 @@
 %{suites, "tests", sasl_SUITE}.
 %{suites, "tests", shared_roster_SUITE}.
 %{suites, "tests", sic_SUITE}.
-%{suites, "tests", sm_SUITE}.
+{suites, "tests", sm_SUITE}.
 %{suites, "tests", users_api_SUITE}.
 %{suites, "tests", vcard_simple_SUITE}.
 %{suites, "tests", vcard_SUITE}.
