@@ -430,7 +430,7 @@ microseconds_to_string(Microseconds) ->
 %% Writes onto travis console directly
 report_progress(Format, Args) ->
     Message = io_lib:format(Format, Args),
-    file:write_file("/tmp/progress", Message, [append]).
+    io:format("~s", [Message]).
 
 travis_fold(Description, Fun) ->
     case os:getenv("TRAVIS_JOB_ID") of
