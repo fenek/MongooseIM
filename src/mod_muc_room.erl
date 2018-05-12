@@ -579,6 +579,13 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
                  StateData),
     next_normal_state(NSD);
 
+handle_event({service_stanza, Stanza}, _StateName, StateData) ->
+    lists:foreach(
+      fun({_LJID, Info}) ->
+              ejabberd_router:route(StateData#state.jid, Info#user.jid, Stanza)
+      end, dict:to_list(StateData#state.users)),
+    next_normal_state(StateData);
+
 handle_event({destroy, Reason}, _StateName, StateData) ->
     {result, [], stop} =
         destroy_room(
@@ -1039,22 +1046,26 @@ process_presence1(From, Nick, #xmlel{name = <<"presence">>, attrs = Attrs} = Pac
             process_presence_unavailable(From, Packet, StateData);
         <<"error">> ->
             process_presence_error(From, Packet, Lang, StateData);
+        <<"available">> ->
+            process_presence_available(From, Nick, Packet, Lang, StateData);
         <<>> ->
-            case is_new_nick_of_online_user(From, Nick, StateData) of
-                true ->
-                    process_presence_nick_change(From, Nick, Packet, Lang, StateData);
-                false ->
-                    process_simple_presence(From, Packet, StateData);
-                user_is_offline ->
-                    %% at this point we know that the presence has no type
-                    %% (user wants to enter the room)
-                    %% and that the user is not alredy online
-                    handle_new_user(From, Nick, Packet, StateData, Attrs)
-            end;
+            process_presence_available(From, Nick, Packet, Lang, StateData);
         _NotOnline ->
             StateData
     end.
 
+process_presence_available(From, Nick, #xmlel{ attrs = Attrs } = Packet, Lang, StateData) ->
+    case is_new_nick_of_online_user(From, Nick, StateData) of
+        true ->
+            process_presence_nick_change(From, Nick, Packet, Lang, StateData);
+        false ->
+            process_simple_presence(From, Packet, StateData);
+        user_is_offline ->
+            %% at this point we know that the presence has no type
+            %% (user wants to enter the room)
+            %% and that the user is not alredy online
+            handle_new_user(From, Nick, Packet, StateData, Attrs)
+    end.
 
 -spec process_simple_presence(jid:jid(), exml:element(), state()) -> state().
 process_simple_presence(From, Packet, StateData) ->
@@ -1988,6 +1999,16 @@ do_add_new_user(From, Nick, #xmlel{attrs = Attrs, children = Els} = Packet,
         _ ->
             send_subject(From, Lang, StateData)
     end,
+
+    Acc0 = mongoose_acc:new(),
+    Acc1 = mongoose_acc:put(extra_stanzas, [], Acc0),
+    Acc = ejabberd_hooks:run_fold(room_new_user, StateData#state.host, Acc1,
+                                  [StateData#state.room, From, Nick]),
+    ExtraStanzas = mongoose_acc:get(extra_stanzas, Acc),
+    lists:foreach(fun(ExtraStanza) ->
+                          ejabberd_router:route(StateData#state.jid, From, ExtraStanza)
+                  end, ExtraStanzas),
+
     case NewState#state.just_created of
         true ->
             NewState#state{just_created = false};

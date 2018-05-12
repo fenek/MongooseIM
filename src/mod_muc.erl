@@ -42,6 +42,7 @@
          create_instant_room/5,
          process_iq_disco_items/4,
          broadcast_service_message/2,
+         send_service_stanza/2,
          can_use_nick/4,
          room_jid_to_pid/1,
          default_host/0]).
@@ -1058,6 +1059,12 @@ broadcast_service_message(Host, Msg) ->
                 Pid, {service_message, Msg})
       end, get_vh_rooms(Host)).
 
+-spec send_service_stanza(jid:jid(), exml:element()) -> ok.
+send_service_stanza(#jid{ lserver = MUCHost } = RoomJID, #xmlel{ attrs = Attrs } = Stanza) ->
+    LRoom = jid:to_binary(jid:to_lus(RoomJID)),
+    RoomStanza = Stanza#xmlel{ attrs = lists:keystore(<<"from">>, 1, Attrs, {<<"from">>, LRoom}) },
+    {ok, Pid} = room_jid_to_pid(RoomJID),
+    gen_fsm:send_all_state_event(Pid, {service_stanza, RoomStanza}).
 
 -spec get_vh_rooms(jid:server()) -> [muc_online_room()].
 get_vh_rooms(Host) ->
