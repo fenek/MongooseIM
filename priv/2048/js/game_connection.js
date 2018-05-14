@@ -1,5 +1,5 @@
 function GameConnection() {
-    this.WS_ENDPOINT = 'ws://localhost:5280/ws-xmpp';
+    this.WS_ENDPOINT = 'ws://192.168.0.102:5280/ws-xmpp';
     this.connection = null;
     this.NS2048 = 'urn:xmpp:2048';
     this.NS2048_VOTE = this.NS2048 + '#vote';
@@ -118,7 +118,7 @@ GameConnection.prototype.parseNewTilesAndNotify = function(xElement) {
 
 
 GameConnection.prototype.joinRoom = function() {
-    var username = this.connection.authcid;
+    var username = Strophe.getNodeFromJid(this.connection.jid);
     var presence = $pres({type: 'available', to: 'game2048@muc.localhost/' + username});
     this.connection.sendPresence(presence);
 }

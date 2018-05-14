@@ -77,7 +77,7 @@ won_or_lost(#{ size := Size } = State) ->
     AllCoords = [ {X, Y} || X <- Dims, Y <- Dims ],
     case lists:any(fun(Coords) ->
                            Value = maps:get(Coords, State),
-                           Value /= null andalso Value >= 2048
+                           Value /= null andalso Value >= 128
                    end, AllCoords) of
         true ->
             won;

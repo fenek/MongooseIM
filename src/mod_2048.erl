@@ -31,7 +31,7 @@ start_link() ->
 
 process_votes(_PollID, Votes) ->
     CountedVotes = aggregate_votes(Votes),
-    [{_, TopCount} | _] = SortedVotes = lists:keysort(2, CountedVotes),
+    [{_, TopCount} | _] = SortedVotes = lists:reverse(lists:keysort(2, CountedVotes)),
     TopVotes = lists:takewhile(fun({_, Count}) -> Count == TopCount end, SortedVotes),
     {TopOption, _} = lists:nth(rand:uniform(length(TopVotes)), TopVotes),
    
@@ -216,7 +216,7 @@ make_tile_el({{AddedX, AddedY}, AddedValue}) ->
                       {<<"y">>, integer_to_binary(AddedY)} ],
             children = [#xmlcdata{ content = tile_to_binary(AddedValue) }] }.
 
-countdown() -> 1.
+countdown() -> 2.
 
 vote2atom(<<"up">>) -> up;
 vote2atom(<<"down">>) -> down;
