@@ -1,3 +1,5 @@
+// Copyright 2018 by Piotr Nosek
+
 function GameConnection() {
     this.WS_ENDPOINT = 'ws://192.168.0.102:5280/ws-xmpp';
     this.connection = null;
