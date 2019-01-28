@@ -1,7 +1,7 @@
 // Copyright 2018 by Piotr Nosek
 
 function GameConnection() {
-    this.WS_ENDPOINT = 'ws://192.168.0.102:5280/ws-xmpp';
+    this.WS_ENDPOINT = 'ws://127.0.0.1:5280/ws-xmpp';
     this.connection = null;
     this.NS2048 = 'urn:xmpp:2048';
     this.NS2048_VOTE = this.NS2048 + '#vote';

@@ -11,9 +11,6 @@ function GameManager(size, InputManager, Actuator) {
 
   this.result = null;
 
-  this.countdown = 0;
-  this.timerPresent = false;
-
   this.startTiles = 2;
 
   this.inputManager.on("move", this.vote.bind(this));
@@ -32,28 +29,7 @@ GameManager.prototype.gameEnd = function(result) {
 
 GameManager.prototype.handleVotesNotification = function(votes) {
     this.actuator.setVotes(votes);
-    this.setCountdown(votes.countdown);
-};
-
-GameManager.prototype.setCountdown = function(seconds) {
-    if(this.timerPresent)
-        return;
-    this.countdown = seconds;
-    this.actuator.setCountdown(this.countdown);
-    setTimeout(this.decrementCountdown.bind(this), 1000);
-    this.timerPresent = true;
-};
-
-GameManager.prototype.decrementCountdown = function() {
-    this.countdown--;
-
-    this.actuator.setCountdown(this.countdown);
-
-    if(this.countdown > 0) {
-        setTimeout(this.decrementCountdown.bind(this), 1000);
-    } else {
-        this.timerPresent = false;
-    }
+    this.actuator.setGameTime(parseInt(votes.gametime));
 };
 
 GameManager.prototype.updateBoard = function(board) {

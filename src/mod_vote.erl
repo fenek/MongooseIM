@@ -71,10 +71,8 @@ handle_iq(From, _To, Acc, #iq{ type = set, sub_el = QueryEl } = IQ) ->
 start(_Host, _Opts) ->
     ets:new(?PTABLE, [named_table, public]),
     vote_timers:start().
-%    gen_iq_handler:add_iq_handler(ejabberd_local, Host, ?NS_VOTE, ?MODULE, handle_iq, no_queue).
 
 stop(_Host) ->
-%    gen_iq_handler:remove_iq_handler(ejabberd_local, Host, ?NS_VOTE),
     vote_timers:stop(),
     lists:foreach(fun({ID, _, _, _}) ->
                           catch stop_poll(ID)

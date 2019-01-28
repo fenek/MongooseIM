@@ -63,6 +63,7 @@ process_votes(_PollID, Votes) ->
 
 init([]) ->
     State = reset_game(#{}),
+    set_broadcast_timer(),
     {ok, State}.
 
 handle_call({move, Direction}, _From, #{ board_state := BoardState0,
@@ -76,11 +77,13 @@ handle_call({move, Direction}, _From, #{ board_state := BoardState0,
             NewTile = erl2048_lib:last_added(BoardState2),
             case erl2048_lib:won_or_lost(BoardState2) of
                 won ->
+                    mod_vote:stop_poll(game2048),
                     timer:send_after(10000, self(), reset),
-                    {BoardState2, won};
+                    {BoardState2#{ game_over => true }, won};
                 lost ->
+                    mod_vote:stop_poll(game2048),
                     timer:send_after(10000, self(), reset),
-                    {BoardState2, {lost, NewTile}};
+                    {BoardState2#{ game_over => true }, {lost, NewTile}};
                 neither ->
                     {BoardState2, {new_tile, NewTile}}
             end;
@@ -109,6 +112,10 @@ handle_info(reset, State) ->
     RoomJID = jid:make(<<"game2048">>, <<"muc.localhost">>, <<>>),
     mod_muc:send_service_stanza(RoomJID, BoardStanza),
     {noreply, NState};
+handle_info(broadcast, State) ->
+    catch send_aggregated_votes(State),
+    set_broadcast_timer(),
+    {noreply, State};
 handle_info(Unknown, State) ->
     ?ERROR_MSG("unknown: ~p", [Unknown]),
     {noreply, State}.
@@ -125,17 +132,12 @@ terminate(_Reason, _State) ->
 
 process_room_iq(From, #jid{ luser = <<"game2048">> } = _Room, Acc, #iq{ sub_el = QueryEl } = IQ) ->
     VoteBin = exml_query:path(QueryEl, [{element, <<"vote">>}, cdata]),
-    mod_vote:store_vote(game2048, From, vote2atom(VoteBin)),
-    AllVotes = mod_vote:peek_votes(game2048),
-    CountedVotes = aggregate_votes(AllVotes),
-    VotesChildren0 = [ #xmlel{ name = atom_to_binary(Opt, utf8),
-                              children = [#xmlcdata{ content = integer_to_binary(Count) }] }
-                      || {Opt, Count} <- CountedVotes ],
-    CountdownInt = integer_to_binary(countdown()),
-    VotesChildren = [ #xmlel{ name = <<"countdown">>,
-                              children = [ #xmlcdata{ content = CountdownInt } ] }
-                      | VotesChildren0 ],
-    send_service_stanza(?NS_2048_VOTES, VotesChildren),
+    try
+        mod_vote:store_vote(game2048, From, vote2atom(VoteBin))
+    catch
+        C:R ->
+            ?DEBUG("event=vote_processing_crashed, class=~p, reason=~p", [C, R])
+    end,
     {Acc, IQ#iq{ type = result, sub_el = QueryEl#xmlel{ children = [] } }};
 process_room_iq(_From, _Room, Acc, _IQ) ->
     {Acc, ignore}.
@@ -145,14 +147,14 @@ room_new_user(Acc0, <<"game2048">>, _User, _Nick) ->
 
     Acc1 =
     case call(get_move_result) of
-        won -> mongoose_acc:append(extra_stanzas, make_x_message(?NS_2048_WON, []), Acc0);
-        lost -> mongoose_acc:append(extra_stanzas, make_x_message(?NS_2048_LOST, []), Acc0);
+        won -> mongoose_acc:append(mod_muc, extra_stanzas, make_x_message(?NS_2048_WON, []), Acc0);
+        lost -> mongoose_acc:append(mod_muc, extra_stanzas, make_x_message(?NS_2048_LOST, []), Acc0);
         _ -> Acc0
     end,
 
     {ok, Board} = call(get_board),
     BoardStanza = make_board_stanza(Board),
-    mongoose_acc:append(extra_stanzas, BoardStanza, Acc1);
+    mongoose_acc:append(mod_muc, extra_stanzas, BoardStanza, Acc1);
 room_new_user(Acc, _Room, _User, _Nick) ->
     Acc.
 
@@ -186,6 +188,20 @@ stop(Host) ->
 %% Internal functions
 %% --------------------------------------------------------
 
+send_aggregated_votes(#{ game_over := true }) ->
+    ok;
+send_aggregated_votes(#{ game_start := GameStart }) ->
+    AllVotes = mod_vote:peek_votes(game2048),
+    CountedVotes = aggregate_votes(AllVotes),
+    VotesChildren0 = [ #xmlel{ name = atom_to_binary(Opt, utf8),
+                              children = [#xmlcdata{ content = integer_to_binary(Count) }] }
+                      || {Opt, Count} <- CountedVotes ],
+    GameTime = timer:now_diff(os:timestamp(), GameStart) div 1000000,
+    VotesChildren = [ #xmlel{ name = <<"gametime">>,
+                              children = [#xmlcdata{ content = integer_to_binary(GameTime) }] }
+                      | VotesChildren0],
+    send_service_stanza(?NS_2048_VOTES, VotesChildren).
+
 make_x_message(XMLNS, XChildren) ->
     XEl = #xmlel{ name = <<"x">>, attrs = [{<<"xmlns">>, XMLNS}], children = XChildren },
     #xmlel{ name = <<"message">>,
@@ -216,6 +232,9 @@ make_tile_el({{AddedX, AddedY}, AddedValue}) ->
                       {<<"y">>, integer_to_binary(AddedY)} ],
             children = [#xmlcdata{ content = tile_to_binary(AddedValue) }] }.
 
+set_broadcast_timer() ->
+    erlang:send_after((countdown() * 1000) div 4, self(), broadcast).
+
 countdown() -> 2.
 
 vote2atom(<<"up">>) -> up;
@@ -245,5 +264,8 @@ call(Msg) ->
 reset_game(#{} = State) ->
     mod_vote:stop_poll(game2048),
     mod_vote:start_poll(game2048, countdown() * 1000, fun ?MODULE:process_votes/2),
-    State#{ board_state => erl2048_lib:init(undefined), move_result => undefined }.
+    State#{ board_state => erl2048_lib:init(undefined),
+            move_result => undefined,
+            game_start => os:timestamp(),
+            game_over => false }.
 

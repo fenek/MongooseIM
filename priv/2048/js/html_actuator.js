@@ -2,7 +2,7 @@ function HTMLActuator() {
   this.tileContainer    = document.querySelector(".tile-container");
   this.messageContainer = document.querySelector(".game-message");
   this.playerVoteContainer = document.querySelector(".player-vote");
-  this.countdownContainer = document.querySelector(".countdown");
+  this.gameTimeContainer = document.querySelector(".game-time");
   this.votesContainers = {
       up: document.querySelector(".up-votes"),
       down: document.querySelector(".down-votes"),
@@ -49,8 +49,12 @@ HTMLActuator.prototype.setVotes = function (votes) {
     this.votesContainers.right.textContent = votes.right;
 }
 
-HTMLActuator.prototype.setCountdown = function (value) {
-    this.countdownContainer.textContent = value;
+HTMLActuator.prototype.setGameTime = function (seconds) {
+    var zeroPad = '';
+    if(seconds % 60 < 10)
+        zeroPad = '0';
+    var formattedValue = Math.floor(seconds / 60) + ":" + zeroPad + (seconds % 60);
+    this.gameTimeContainer.textContent = formattedValue;
 }
 
 HTMLActuator.prototype.addTile = function (tile) {

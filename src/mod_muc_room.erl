@@ -581,9 +581,9 @@ handle_event({service_message, Msg}, _StateName, StateData) ->
 
 handle_event({service_stanza, Stanza}, _StateName, StateData) ->
     lists:foreach(
-      fun({_LJID, Info}) ->
-              ejabberd_router:route(StateData#state.jid, Info#user.jid, Stanza)
-      end, dict:to_list(StateData#state.users)),
+      fun(UserRec) ->
+              ejabberd_router:route(StateData#state.jid, UserRec#user.jid, Stanza)
+      end, maps:values(StateData#state.users)),
     next_normal_state(StateData);
 
 handle_event({destroy, Reason}, _StateName, StateData) ->
@@ -2000,11 +2000,15 @@ do_add_new_user(From, Nick, #xmlel{attrs = Attrs, children = Els} = Packet,
             send_subject(From, Lang, StateData)
     end,
 
-    Acc0 = mongoose_acc:new(),
-    Acc1 = mongoose_acc:put(extra_stanzas, [], Acc0),
+    Acc0 = mongoose_acc:new(#{
+             location => ?LOCATION,
+             lserver => StateData#state.server_host,
+             element => undefined
+            }),
+    Acc1 = mongoose_acc:set(mod_muc, extra_stanzas, [], Acc0),
     Acc = ejabberd_hooks:run_fold(room_new_user, StateData#state.host, Acc1,
                                   [StateData#state.room, From, Nick]),
-    ExtraStanzas = mongoose_acc:get(extra_stanzas, Acc),
+    ExtraStanzas = mongoose_acc:get(mod_muc, extra_stanzas, Acc),
     lists:foreach(fun(ExtraStanza) ->
                           ejabberd_router:route(StateData#state.jid, From, ExtraStanza)
                   end, ExtraStanzas),

@@ -66,7 +66,8 @@ init(Req, Opts) ->
     Req1 = add_sec_websocket_protocol_header(Req),
     ?DEBUG("cowboy init: ~p~n", [{Req, Opts}]),
     %% upgrade protocol
-    {cowboy_websocket, Req1, [{peer, Peer}, {peercert, PeerCert} | Opts]}.
+    WSOpts = #{ idle_timeout => proplists:get_value(idle_timeout, Opts, 60000) },
+    {cowboy_websocket, Req1, [{peer, Peer}, {peercert, PeerCert} | Opts], WSOpts}.
 
 terminate(_Reason, _Req, _State) ->
     ok.
