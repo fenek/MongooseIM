@@ -12,6 +12,8 @@ function KeyboardInputManager() {
     this.eventTouchend      = "touchend";
   }
 
+  this.enabled = false;
+
   this.listen();
 }
 
@@ -51,6 +53,8 @@ KeyboardInputManager.prototype.listen = function () {
 
   // Respond to direction keys
   document.addEventListener("keydown", function (event) {
+    if(!self.enabled)
+      return;
     var modifiers = event.altKey || event.ctrlKey || event.metaKey ||
                     event.shiftKey;
     var mapped    = map[event.which];
@@ -62,16 +66,7 @@ KeyboardInputManager.prototype.listen = function () {
       }
     }
 
-    // R key restarts the game
-    if (!modifiers && event.which === 82) {
-      self.restart.call(self, event);
-    }
   });
-
-  // Respond to button presses
-  //this.bindButtonPress(".retry-button", this.restart);
-  //this.bindButtonPress(".restart-button", this.restart);
-  //this.bindButtonPress(".keep-playing-button", this.keepPlaying);
 
   // Respond to swipe events
   var touchStartClientX, touchStartClientY;

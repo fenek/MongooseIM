@@ -2,16 +2,27 @@ function GameManager(size, InputManager, Actuator) {
   this.size           = size; // Size of the grid
   this.inputManager   = new InputManager;
   this.actuator       = new Actuator;
+  this.actuator.manager = this;
   this.game_connection = new GameConnection;
+  this.game_connection.connectCallback = this.handleConnected.bind(this);
   this.game_connection.onVotes = this.handleVotesNotification.bind(this);
   this.game_connection.onMove = this.move.bind(this);
   this.game_connection.onBoard = this.updateBoard.bind(this);
   this.game_connection.onNewTiles = this.handleNewTiles.bind(this);
   this.game_connection.onGameEnd = this.gameEnd.bind(this);
+  this.game_connection.onPlayerJoin = this.playerJoins.bind(this);
+  this.game_connection.onPlayerLeave = this.playerLeaves.bind(this);
+  this.game_connection.onPlayersSinceStart = this.handlePlayersSinceStart.bind(this);
+  this.game_connection.onNickConflict = this.handleNickConflict.bind(this);
+  this.game_connection.joinSuccess = this.joinSuccess.bind(this);
 
   this.result = null;
 
   this.startTiles = 2;
+
+  this.namedPlayers = new Set();
+  this.guestPlayers = 0;
+  this.playersSinceStart = new Set();
 
   this.inputManager.on("move", this.vote.bind(this));
 
@@ -21,6 +32,51 @@ function GameManager(size, InputManager, Actuator) {
 GameManager.prototype.isOver = function () {
   return this.result != null;
 };
+
+GameManager.prototype.joinWithNick = function(nick) {
+    this.game_connection.joinRoom(nick);
+}
+
+GameManager.prototype.handleNickConflict = function() {
+    alert('This nickname is already in use!');
+}
+
+GameManager.prototype.joinSuccess = function() {
+    this.inputManager.enabled = true;
+    this.actuator.hideNickForm();
+    this.actuator.hideConnectionUI();
+    this.actuator.showGameUI();
+}
+
+GameManager.prototype.handleConnected = function(state) {
+    if (state == 1) {
+        this.actuator.setConnectionStatus("Connecting...");
+    } else if (state == 2) {
+        this.actuator.setConnectionStatus("Connected!");
+        this.actuator.showNickForm();
+    } else {
+        this.actuator.setConnectionStatus("Disconnected. Please try to refresh the page.");
+        this.actuator.showConnectionUI();
+        this.actuator.hideGameUI();
+        this.inputManager.enabled = false;
+    }
+}
+
+GameManager.prototype.playerJoins = function(nick, isGuest) {
+    if(isGuest)
+        this.guestPlayers++;
+    else
+        this.namedPlayers.add(nick);
+    this.actuator.setPlayers(this.namedPlayers, this.guestPlayers, this.playersSinceStart);
+}
+
+GameManager.prototype.playerLeaves = function(nick, isGuest) {
+    if(isGuest)
+        this.guestPlayers--;
+    else
+        this.namedPlayers.delete(nick);
+    this.actuator.setPlayers(this.namedPlayers, this.guestPlayers, this.playersSinceStart);
+}
 
 GameManager.prototype.gameEnd = function(result) {
     this.result = result;
@@ -38,6 +94,11 @@ GameManager.prototype.updateBoard = function(board) {
 
   // Update the actuator
   this.actuate();
+}
+
+GameManager.prototype.handlePlayersSinceStart = function(players) {
+    this.playersSinceStart = players;
+    this.actuator.setPlayers(this.namedPlayers, this.guestPlayers, this.playersSinceStart);
 }
 
 GameManager.prototype.handleNewTiles = function(tiles) {

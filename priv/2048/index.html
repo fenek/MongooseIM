@@ -4,30 +4,43 @@
   <meta charset="utf-8">
   <title>512</title>
 
-  <link href="style/main.css" rel="stylesheet" type="text/css">
-  <link rel="shortcut icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="meta/apple-touch-icon.png">
-  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x1096.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone 5+ -->
-  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x920.png"  media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"> <!-- iPhone, retina -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link href="style/main.css" rel="stylesheet" type="text/css"/>
+  <link rel="stylesheet" href="style/jquery.modal.min.css"/>
+  <link rel="shortcut icon" href="favicon.ico"/>
+  <link rel="apple-touch-icon" href="meta/apple-touch-icon.png"/>
+  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x1096.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)"/> <!-- iPhone 5+ -->
+  <link rel="apple-touch-startup-image" href="meta/apple-touch-startup-image-640x920.png"  media="(device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)"/> <!-- iPhone, retina -->
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="HandheldFriendly" content="True"/>
+  <meta name="MobileOptimized" content="320"/>
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0, maximum-scale=1, user-scalable=no, minimal-ui"/>
 </head>
 <body>
   <div class="container">
     <div class="heading">
-      <h1 class="title">512</h1>
-      <img src="mongooseim_logo.png" height="70px" style="margin-left: 20px; margin-top: 20px;"/>
-      <img src="esl_logo.png" height="70px" style="margin-left: 20px; margin-top: 20px;"/>
+      <img src="512_final.png" style="margin-left: auto; margin-right:auto; margin-top: 20px;"/>
     </div>
 
     <div class="above-game">
       <p class="game-intro">Join the other players and get to the <strong>512 tile!</strong></p>
     </div>
 
+    <div id="connection-ui">
+        <hr/>
+        <p>Connection status: <span id="connection-status"></span></p>
+        <div id="nick-form">
+            <hr />
+        <p>If you'd like to be identified with a name and compete for a place in high scores board, please provide a nick in the field below.</p>
+        <p><input type="text" name="nick" size="40"></input></p>
+        <p><input type="button" name="yup" value="OK!"></input>
+        <input type="button" name="nah" value="Connect as guest"></input></p>
+        </div>
+        <hr/>
+    </div>
+
+   <div id="game-ui">
     <div class="votes">
       <p>Your vote: <span class="player-vote"/></p>
       <p>Votes - Up: <span class="up-votes">0</span>
@@ -35,6 +48,8 @@
                  Left: <span class="left-votes">0</span>
                  Right: <span class="right-votes">0</span></p>
       <p>Game time: <span class="game-time">0:00</span></p>
+      <p>Players: <span class="total-players">0</span> (<span class="guest-players">0</span> guests)
+      <a href="#player-list-modal" rel="modal:open">Show player list</a></p>
     </div>
 
     <div class="game-container">
@@ -73,6 +88,7 @@
 
       </div>
     </div>
+   </div>
 
     <p class="game-explanation">
       <strong class="important">How to play:</strong> This is a cooperative version of a popular 2048 game. Use your <strong>arrow keys</strong> to vote for a move. After a first player votes, 2 seconds countdown will start and the game will use the move with the highest vote count. In case of a tie, the move will be chosen randomly from the highest voted ones. After a game is finished (either lost or won), it will automatically restart in 10 seconds.
@@ -83,6 +99,14 @@
     </p>
   </div>
 
+  <div id="player-list-modal" class="modal">
+      Players with <u>underscored nicks</u> have been present in the game since it's started.
+      <ul id="player-list">
+      </ul>
+  </div>
+
+  <script src="js/jquery-3.3.1.min.js"></script>
+  <script src="js/jquery.modal.min.js"></script>
   <script src="js/loglevel.js"></script>
   <script src="js/strophe.js"></script>
   <script src="js/game_connection.js"></script>

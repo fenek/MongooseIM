@@ -3,12 +3,21 @@ function HTMLActuator() {
   this.messageContainer = document.querySelector(".game-message");
   this.playerVoteContainer = document.querySelector(".player-vote");
   this.gameTimeContainer = document.querySelector(".game-time");
+  this.totalPlayersContainer = document.querySelector(".total-players");
+  this.guestPlayersContainer = document.querySelector(".guest-players");
+  this.namedPlayersListContainer = document.querySelector("#player-list");
   this.votesContainers = {
       up: document.querySelector(".up-votes"),
       down: document.querySelector(".down-votes"),
       left: document.querySelector(".left-votes"),
       right: document.querySelector(".right-votes")
   };
+
+  this.manager = null;
+  var self = this;
+
+  $('input[name="yup"]').click(function() { self.manager.joinWithNick($('input[name="nick"]').val()); });
+  $('input[name="nah"]').click(function() { self.manager.joinWithNick(null); });
 }
 
 HTMLActuator.prototype.actuate = function (grid, metadata) {
@@ -32,11 +41,63 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
   });
 };
 
+HTMLActuator.prototype.hideConnectionUI = function() {
+    $('#connection-ui').hide();
+}
+
+HTMLActuator.prototype.showConnectionUI = function() {
+    $('#connection-ui').show();
+}
+
+HTMLActuator.prototype.showGameUI = function() {
+    $('#game-ui').show();
+}
+
+HTMLActuator.prototype.hideGameUI = function() {
+    $('#game-ui').hide();
+}
+
+HTMLActuator.prototype.showNickForm = function() {
+    $('#nick-form').show();
+}
+
+HTMLActuator.prototype.hideNickForm = function() {
+    $('#nick-form').hide();
+}
+
+HTMLActuator.prototype.setConnectionStatus = function(text) {
+    $('#connection-status').text(text);
+}
+
 HTMLActuator.prototype.clearContainer = function (container) {
   while (container.firstChild) {
     container.removeChild(container.firstChild);
   }
 };
+
+HTMLActuator.prototype.setPlayers = function (namedPlayers, guestPlayers, playersSinceStart) {
+    this.totalPlayersContainer.textContent = namedPlayers.size + guestPlayers;
+    this.guestPlayersContainer.textContent = guestPlayers;
+    var pList = this.namedPlayersListContainer;
+    while (pList.firstChild) {
+        pList.removeChild(pList.firstChild);
+    }
+    namedPlayersList = Array.from(namedPlayers);
+    namedPlayersList.sort();
+    namedPlayersList.forEach(pName => {
+        var liNode = document.createElement("li");
+        if(playersSinceStart.has(pName)) {
+            var text = document.createTextNode(pName);
+            var uNode = document.createElement("u");
+            uNode.appendChild(text);
+            liNode.appendChild(uNode);
+        } else {
+            var text = document.createTextNode(pName);
+            liNode.appendChild(text);
+        }
+        pList.appendChild(liNode);
+    });
+}
 
 HTMLActuator.prototype.setPlayerVote = function (vote) {
     this.playerVoteContainer.textContent = vote;

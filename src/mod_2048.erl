@@ -5,12 +5,14 @@
 
 -include("mongoose.hrl").
 -include("jlib.hrl").
+-include("mod_muc_room.hrl").
 
 -define(NS_2048, <<"urn:xmpp:2048">>).
 -define(NS_2048_VOTE, <<"urn:xmpp:2048#vote">>).
 -define(NS_2048_VOTES, <<"urn:xmpp:2048#votes">>).
 -define(NS_2048_MOVE, <<"urn:xmpp:2048#move">>).
 -define(NS_2048_BOARD, <<"urn:xmpp:2048#board">>).
+-define(NS_2048_PLAYERS_SINCE_START, <<"urn:xmpp:2048#players-since-start">>).
 -define(NS_2048_NEW_TILES, <<"urn:xmpp:2048#new-tiles">>).
 -define(NS_2048_WON, <<"urn:xmpp:2048#won">>).
 -define(NS_2048_LOST, <<"urn:xmpp:2048#lost">>).
@@ -96,6 +98,9 @@ handle_call({move, _}, _From, State) ->
     {reply, {ok, no_change}, State};
 handle_call(get_board, _From, #{ board_state := BoardState } = State) ->
     {reply, {ok, erl2048_lib:to_list(BoardState)}, State};
+handle_call(get_players_since_start, _From,
+            #{ players_since_start := PlayersSinceStart } = State) ->
+    {reply, {ok, PlayersSinceStart}, State};
 handle_call(get_move_result, _From, #{ move_result := Result } = State) ->
     {reply, Result, State};
 handle_call(Unknown, _From, State) ->
@@ -107,10 +112,12 @@ handle_cast(Unknown, State) ->
     {noreply, State}.
 
 handle_info(reset, State) ->
-    #{ board_state := BoardState } = NState = reset_game(State),
+    #{ board_state := BoardState,
+       players_since_start := PlayersSinceStart } = NState = reset_game(State),
     BoardStanza = make_board_stanza(erl2048_lib:to_list(BoardState)),
-    RoomJID = jid:make(<<"game2048">>, <<"muc.localhost">>, <<>>),
-    mod_muc:send_service_stanza(RoomJID, BoardStanza),
+    mod_muc:send_service_stanza(room_jid(), BoardStanza),
+    PlayersSinceStartStanza = make_players_since_start_stanza(PlayersSinceStart),
+    mod_muc:send_service_stanza(room_jid(), PlayersSinceStartStanza),
     {noreply, NState};
 handle_info(broadcast, State) ->
     catch send_aggregated_votes(State),
@@ -153,8 +160,10 @@ room_new_user(Acc0, <<"game2048">>, _User, _Nick) ->
     end,
 
     {ok, Board} = call(get_board),
+    {ok, PlayersSinceStart} = call(get_players_since_start),
     BoardStanza = make_board_stanza(Board),
-    mongoose_acc:append(mod_muc, extra_stanzas, BoardStanza, Acc1);
+    PlayersSinceStartStanza = make_players_since_start_stanza(PlayersSinceStart),
+    mongoose_acc:append(mod_muc, extra_stanzas, [BoardStanza, PlayersSinceStartStanza], Acc1);
 room_new_user(Acc, _Room, _User, _Nick) ->
     Acc.
 
@@ -210,8 +219,7 @@ make_x_message(XMLNS, XChildren) ->
 
 send_service_stanza(XMLNS, XChildren) ->
     Stanza = make_x_message(XMLNS, XChildren),
-    RoomJID = jid:make(<<"game2048">>, <<"muc.localhost">>, <<>>),
-    mod_muc:send_service_stanza(RoomJID, Stanza).
+    mod_muc:send_service_stanza(room_jid(), Stanza).
 
 make_board_stanza(Board) ->
     TilesEls = [
@@ -231,6 +239,16 @@ make_tile_el({{AddedX, AddedY}, AddedValue}) ->
             attrs = [ {<<"x">>, integer_to_binary(AddedX)},
                       {<<"y">>, integer_to_binary(AddedY)} ],
             children = [#xmlcdata{ content = tile_to_binary(AddedValue) }] }.
+
+make_players_since_start_stanza(Players) ->
+    PlayersEls = [ #xmlel{ name = <<"player">>,
+                           children = [#xmlcdata{ content = Player }] }
+                   || Player <- Players ],
+    XEl = #xmlel{ name = <<"x">>, attrs = [{<<"xmlns">>, ?NS_2048_PLAYERS_SINCE_START}],
+                  children = PlayersEls },
+    #xmlel{ name = <<"message">>,
+            attrs = [ {<<"type">>, <<"groupchat">>} ],
+            children = [XEl] }.
 
 set_broadcast_timer() ->
     erlang:send_after((countdown() * 1000) div 4, self(), broadcast).
@@ -261,11 +279,26 @@ tile_to_binary(Value) -> integer_to_binary(Value).
 call(Msg) ->
     gen_server:call(?MODULE, Msg).
 
-reset_game(#{} = State) ->
+reset_game(State) ->
     mod_vote:stop_poll(game2048),
     mod_vote:start_poll(game2048, countdown() * 1000, fun ?MODULE:process_votes/2),
+    PlayersSinceStart = case mod_muc_room:get_room_users(room_jid()) of
+                            {ok, Players} -> filter_out_guests(Players);
+                            {error, _} -> []
+                        end,
     State#{ board_state => erl2048_lib:init(undefined),
             move_result => undefined,
             game_start => os:timestamp(),
+            players_since_start => PlayersSinceStart,
             game_over => false }.
+
+filter_out_guests([]) ->
+    [];
+filter_out_guests([#user{ nick = <<"--GUEST--", _/binary>> } | RPlayers]) ->
+    filter_out_guests(RPlayers);
+filter_out_guests([#user{ nick = Player } | RPlayers]) ->
+    [Player | filter_out_guests(RPlayers)].
+
+room_jid() ->
+    jid:make(<<"game2048">>, <<"muc.localhost">>, <<>>).
 
