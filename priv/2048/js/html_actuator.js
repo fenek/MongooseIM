@@ -6,6 +6,8 @@ function HTMLActuator() {
   this.totalPlayersContainer = document.querySelector(".total-players");
   this.guestPlayersContainer = document.querySelector(".guest-players");
   this.namedPlayersListContainer = document.querySelector("#player-list");
+  this.highScoresContainer = document.querySelector("#high-scores");
+  this.highScoresHead = document.querySelector("#high-scores-h");
   this.votesContainers = {
       up: document.querySelector(".up-votes"),
       down: document.querySelector(".down-votes"),
@@ -74,6 +76,37 @@ HTMLActuator.prototype.clearContainer = function (container) {
     container.removeChild(container.firstChild);
   }
 };
+
+HTMLActuator.prototype.zeroPad = function(val) {
+    var zeroPad = '';
+    if(val % 60 < 10)
+        zeroPad = '0';
+    return zeroPad + val;
+};
+
+HTMLActuator.prototype.updateScores = function (scores) {
+    this.highScoresHead.style.display = 'block';
+    this.clearContainer(this.highScoresContainer);
+    scores.forEach(score => {
+        var hours = Math.floor(score.time / 3600);
+        var minutes = Math.floor(score.time / 60) % 60;
+        var seconds = score.time % 60;
+        var formattedTime = this.zeroPad(hours) + ':' + this.zeroPad(minutes) + ':' + this.zeroPad(seconds);
+        var formattedPlayers = "only guests";
+        if(score.nicks.length > 0) {
+            formattedPlayers = '';
+            score.nicks.forEach(nick => {
+                formattedPlayers = formattedPlayers + ', ' + nick;
+            });
+            formattedPlayers = formattedPlayers.substring(2);
+        }
+        var scoreText = formattedTime + ' - ' + formattedPlayers;
+        var liNode = document.createElement("li");
+        var text = document.createTextNode(scoreText);
+        liNode.appendChild(text);
+        this.highScoresContainer.appendChild(liNode);
+    });
+}
 
 HTMLActuator.prototype.setPlayers = function (namedPlayers, guestPlayers, playersSinceStart) {
     this.totalPlayersContainer.textContent = namedPlayers.size + guestPlayers;

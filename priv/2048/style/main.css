@@ -2,7 +2,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: white;
+  background: #b4dee3;
   color: #373838;
   font-family: "Gotham Light", "Helvetica Neue", Arial, sans-serif;
   font-size: 18px; }
@@ -339,24 +339,24 @@ hr {
     z-index: 10;
     font-size: 55px; }
   .tile.tile-2 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #d7dddc;
     box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0), inset 0 0 0 1px rgba(255, 255, 255, 0); }
   .tile.tile-4 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #cdecf4;
     box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0), inset 0 0 0 1px rgba(255, 255, 255, 0); }
   .tile.tile-8 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #99d2df; }
   .tile.tile-16 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #b0b9bc; }
   .tile.tile-32 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #8cd4e6; }
   .tile.tile-64 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #55b5ca; }
   .tile.tile-128 .tile-inner {
     color: #ffffff;
@@ -367,7 +367,7 @@ hr {
       .tile.tile-128 .tile-inner {
         font-size: 25px; } }
   .tile.tile-256 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #1298b6;
     box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.31746), inset 0 0 0 1px rgba(255, 255, 255, 0.19048);
     font-size: 45px; }
@@ -375,7 +375,7 @@ hr {
       .tile.tile-256 .tile-inner {
         font-size: 25px; } }
   .tile.tile-512 .tile-inner {
-    color: #4f5151;
+    color: black;
     background: #fcea0f;
     box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.39683), inset 0 0 0 1px rgba(255, 255, 255, 0.2381);
     font-size: 45px; }
@@ -541,9 +541,6 @@ hr {
   display: block;
   text-align: center;
   float: right; }
-
-.game-explanation {
-  margin-top: 50px; }
 
 @media screen and (max-width: 520px) {
   html, body {

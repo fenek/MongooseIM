@@ -12,6 +12,7 @@ function GameConnection() {
     this.NS2048_NEW_TILES = this.NS2048 + '#new-tiles';
     this.NS2048_WON = this.NS2048 + '#won';
     this.NS2048_LOST = this.NS2048 + '#lost';
+    this.NS2048_SCORES = this.NS2048 + '#scores';
 
     this.connectCallback = null;
     this.onNickConflict = null;
@@ -24,6 +25,7 @@ function GameConnection() {
     this.onPlayerLeave = null;
     this.onPlayersSinceStart = null;
     this.joinSuccess = null;
+    this.onScores = null;
 
     this.nick = '';
     this.isConnected = false;
@@ -80,6 +82,7 @@ GameConnection.prototype.gameUpdateHandler = function (msg) {
         case this.NS2048_NEW_TILES: this.parseNewTilesAndNotify(xElement); break;
         case this.NS2048_WON: this.onGameEnd('won'); break;
         case this.NS2048_LOST: this.onGameEnd('lost'); break;
+        case this.NS2048_SCORES: this.parseScoresAndNotify(xElement); break;
     }
 
     return true;
@@ -160,6 +163,20 @@ GameConnection.prototype.parsePlayersSinceStartAndNotify = function(xElement) {
     for(var i = 0; i < children.length; i++)
         players.add(children[i].textContent);
     this.onPlayersSinceStart(players);
+}
+
+GameConnection.prototype.parseScoresAndNotify = function(xElement) {
+    var children = xElement.children;
+    scores = [];
+    for(var i = 0; i < children.length; i++) {
+        scores[i] = { time: 0, nicks: [] };
+        scores[i].time = parseInt(children[i].getAttribute('time'));
+        nicks = [];
+        for(var j = 0; j < children[i].children.length; j++)
+            nicks[j] = children[i].children[j].textContent;
+        scores[i].nicks = nicks;
+    }
+    this.onScores(scores);
 }
 
 GameConnection.prototype.parseNewTilesAndNotify = function(xElement) {

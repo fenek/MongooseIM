@@ -15,6 +15,7 @@ function GameManager(size, InputManager, Actuator) {
   this.game_connection.onPlayersSinceStart = this.handlePlayersSinceStart.bind(this);
   this.game_connection.onNickConflict = this.handleNickConflict.bind(this);
   this.game_connection.joinSuccess = this.joinSuccess.bind(this);
+  this.game_connection.onScores = this.updateScores.bind(this);
 
   this.result = null;
 
@@ -99,6 +100,10 @@ GameManager.prototype.updateBoard = function(board) {
 GameManager.prototype.handlePlayersSinceStart = function(players) {
     this.playersSinceStart = players;
     this.actuator.setPlayers(this.namedPlayers, this.guestPlayers, this.playersSinceStart);
+}
+
+GameManager.prototype.updateScores = function(scores) {
+    this.actuator.updateScores(scores);
 }
 
 GameManager.prototype.handleNewTiles = function(tiles) {

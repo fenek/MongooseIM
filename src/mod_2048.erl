@@ -16,6 +16,7 @@
 -define(NS_2048_NEW_TILES, <<"urn:xmpp:2048#new-tiles">>).
 -define(NS_2048_WON, <<"urn:xmpp:2048#won">>).
 -define(NS_2048_LOST, <<"urn:xmpp:2048#lost">>).
+-define(NS_2048_SCORES, <<"urn:xmpp:2048#scores">>).
 
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -23,6 +24,11 @@
 -export([start/2, stop/1]).
 -export([process_votes/2]).
 -export([process_room_iq/4, room_new_user/4]).
+
+-record(score, {
+          time,
+          players
+         }).
 
 %% --------------------------------------------------------
 %% API
@@ -80,6 +86,7 @@ handle_call({move, Direction}, _From, #{ board_state := BoardState0,
             case erl2048_lib:won_or_lost(BoardState2) of
                 won ->
                     mod_vote:stop_poll(game2048),
+                    store_score(State),
                     timer:send_after(10000, self(), reset),
                     {BoardState2#{ game_over => true }, won};
                 lost ->
@@ -163,7 +170,9 @@ room_new_user(Acc0, <<"game2048">>, _User, _Nick) ->
     {ok, PlayersSinceStart} = call(get_players_since_start),
     BoardStanza = make_board_stanza(Board),
     PlayersSinceStartStanza = make_players_since_start_stanza(PlayersSinceStart),
-    mongoose_acc:append(mod_muc, extra_stanzas, [BoardStanza, PlayersSinceStartStanza], Acc1);
+    ScoresStanza = make_x_message(?NS_2048_SCORES, make_scores_els()),
+    ExtraStanzas = [BoardStanza, PlayersSinceStartStanza, ScoresStanza],
+    mongoose_acc:append(mod_muc, extra_stanzas, ExtraStanzas, Acc1);
 room_new_user(Acc, _Room, _User, _Nick) ->
     Acc.
 
@@ -172,6 +181,10 @@ room_new_user(Acc, _Room, _User, _Nick) ->
 %% --------------------------------------------------------
 
 start(Host, Opts) ->
+    mnesia:create_table(score, [{attributes, record_info(fields, score)},
+                                {disc_copies, [node()]},
+                                {type, bag}]),
+
     MUCHost = gen_mod:get_opt_subhost(Host, Opts, mod_muc:default_host()),
     AdminJID = jid:make(<<"admin">>, <<"localhost">>, <<>>),
     RoomOpts = [
@@ -280,6 +293,7 @@ call(Msg) ->
     gen_server:call(?MODULE, Msg).
 
 reset_game(State) ->
+    send_service_stanza(?NS_2048_SCORES, make_scores_els()),
     mod_vote:stop_poll(game2048),
     mod_vote:start_poll(game2048, countdown() * 1000, fun ?MODULE:process_votes/2),
     PlayersSinceStart = case mod_muc_room:get_room_users(room_jid()) of
@@ -301,4 +315,22 @@ filter_out_guests([#user{ nick = Player } | RPlayers]) ->
 
 room_jid() ->
     jid:make(<<"game2048">>, <<"muc.localhost">>, <<>>).
+
+store_score(#{ game_start := GameStart, players_since_start := Players }) ->
+    Time = timer:now_diff(os:timestamp(), GameStart) div 1000000,
+    mnesia:dirty_write(#score{ time = Time, players = Players }).
+
+make_scores_els() ->
+    Keys = mnesia:dirty_all_keys(score),
+    Scores = lists:flatmap(fun(Key) -> mnesia:dirty_read(score, Key) end, Keys),
+    SortedScores = lists:keysort(#score.time, Scores),
+    TopTen = lists:sublist(SortedScores, 10),
+    [ #xmlel{ name = <<"score">>,
+              attrs = [{<<"time">>, integer_to_binary(Score#score.time)}],
+              children = make_players_els(Score#score.players) } || Score <- TopTen ].
+
+make_players_els(Players) ->
+    [ #xmlel{ name = <<"player">>,
+              children = [#xmlcdata{ content = Nick }] }
+      || Nick <- Players ].
 
