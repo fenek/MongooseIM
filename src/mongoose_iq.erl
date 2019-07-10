@@ -83,7 +83,7 @@ update_acc_info(Acc0) ->
 %% update_and_get updates only when it is actually necessary
 %% and adds IQ data if it's missing
 
--spec info(mongoose_acc:t()) -> {invalid | not_iq | jlib:iq(), UpdatedAcc :: mongoose_acc:t()}.
+-spec info(mongoose_acc:t()) -> {error | not_an_iq | jlib:iq(), UpdatedAcc :: mongoose_acc:t()}.
 info(Acc) -> update_and_get(record, Acc).
 
 -spec xmlns(mongoose_acc:t()) -> {binary() | undefined, UpdatedAcc :: mongoose_acc:t()}.

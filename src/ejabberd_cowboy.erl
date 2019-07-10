@@ -158,6 +158,8 @@ do_start_cowboy(Ref, Opts) ->
                   {failed_to_start_child, ranch_acceptors_sup,
                    {{badmatch, {error, eaddrinuse}}, _ }}}, _}} ->
             {error, eaddrinuse};
+        {already_started, Pid} ->
+            Pid;
         Result ->
             Result
     end.

@@ -44,7 +44,7 @@
                  password_protected = false     :: boolean(),
                  password = <<>>,
                  anonymous = true               :: boolean(),
-                 max_users = ?MAX_USERS_DEFAULT :: pos_integer() | none,
+                 max_users = ?MAX_USERS_DEFAULT,
                  maygetmemberlist = [],
                  logging = false                :: boolean()
                 }).

@@ -106,7 +106,7 @@ update_reg_users_counter_table(Server) ->
 -spec supports_password_type(jid:lserver(), cyrsasl:password_type()) -> boolean().
 supports_password_type(_, plain) -> true;
 supports_password_type(_, scram) -> true;
-supports_password_type(Host, digest) -> not scram:enabled(Host);
+supports_password_type(Host, digest) -> not scram:enabled();
 supports_password_type(_, _) -> false.
 
 -spec authorize(mongoose_credentials:t()) -> {ok, mongoose_credentials:t()}

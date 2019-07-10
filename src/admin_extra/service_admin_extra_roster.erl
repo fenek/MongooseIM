@@ -398,7 +398,7 @@ build_broadcast(U, S, remove) ->
     build_broadcast(U, S, none);
 %% Subs = both | from | to | none
 build_broadcast(U, S, SubsAtom) when is_atom(SubsAtom) ->
-    {broadcast, {item, {U, S, <<"">>}, SubsAtom}}.
+    #xmlel{ name = <<"broadcast">>, children = [{item, {U, S, ""}, SubsAtom}] }.
 
 %%-----------------------------
 %% Purge roster items
@@ -519,8 +519,8 @@ decide_rip_jid({UName, UServer}, MatchList) ->
                 MServer = MJID#jid.lserver,
                 IsServer = is_regexp_match(UServer, MServer),
                 case {MName, UName} of
-                    {<<>>, <<>>} -> IsServer;
-                    {<<>>, _} -> false;
+                    {"", ""} -> IsServer;
+                    {"", _} -> false;
                     _ -> IsServer andalso is_regexp_match(UName, MName)
                 end
         end,

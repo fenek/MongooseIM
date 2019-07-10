@@ -1,0 +1,3 @@
+./rebar3 dialyzer > dialyzer.new
+diff dialyzer.old dialyzer.new
+mv dialyzer.new dialyzer.old

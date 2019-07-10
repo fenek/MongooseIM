@@ -556,7 +556,7 @@ timestamp_to_xml(DateTime, Timezone, FromJID, Desc) ->
            end,
     #xmlel{name = <<"delay">>,
            attrs = [{<<"xmlns">>, ?NS_DELAY},
-                    {<<"stamp">>, list_to_binary(TString ++ TzString)} | From],
+                    {<<"stamp">>, TString ++ TzString} | From],
            children = Text}.
 
 -spec now_to_utc_string(erlang:timestamp()) -> string().

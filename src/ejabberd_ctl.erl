@@ -63,7 +63,7 @@
 -type cmd() :: {CallString :: string(), Args :: [string()], Desc :: string()}.
 
 -define(ASCII_SPACE_CHARACTER, $\s).
--define(PRINT(Format, Args), io:format(lists:flatten(Format), Args)).
+-define(PRINT(Format, Args), io:format(Format, Args)).
 -define(TIME_HMS_FORMAT, "~B days ~2.10.0B:~2.10.0B:~2.10.0B").
 -define(a2l(A), atom_to_list(A)).
 

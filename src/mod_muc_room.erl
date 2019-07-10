@@ -1791,10 +1791,7 @@ is_new_nick_of_online_user(JID, Nick, StateData) ->
 -spec is_user_limit_reached(jid:jid(), mod_muc:affiliation(), state()) -> boolean().
 is_user_limit_reached(From, Affiliation, StateData) ->
     MaxUsers = get_max_users(StateData),
-    MaxAdminUsers = case MaxUsers of
-                        none -> none;
-                        _ -> MaxUsers + get_max_users_admin_threshold(StateData)
-                    end,
+    MaxAdminUsers = MaxUsers + get_max_users_admin_threshold(StateData),
     NUsers = count_users(StateData),
     ServiceAffiliation = get_service_affiliation(From, StateData),
     NConferences = tab_count_user(From),
@@ -2394,7 +2391,8 @@ send_config_update(Type, StateData) ->
             logging_enabled     -> <<"170">>;
             logging_disabled    -> <<"171">>;
             nonanonymous        -> <<"172">>;
-            semianonymous       -> <<"173">>
+            semianonymous       -> <<"173">>;
+            _                   -> <<"104">>
         end,
     Message = jlib:make_config_change_message(Status),
     send_to_all_users(Message, StateData).
@@ -2836,10 +2834,10 @@ process_admin_item_set_unsafe({JID, affiliation, none, Reason}, _UJID, SD) ->
     case  (SD#state.config)#config.members_only of
         true ->
             safe_send_kickban_presence(JID, Reason, <<"321">>, none, SD),
-            SD1 = set_affiliation_and_reason(JID, none, Reason, SD),
+            SD1 = set_affiliation(JID, none, SD),
             set_role(JID, none, SD1);
         _ ->
-            SD1 = set_affiliation_and_reason(JID, none, Reason, SD),
+            SD1 = set_affiliation(JID, none, SD),
             send_update_presence(JID, Reason, SD1),
             SD1
     end;

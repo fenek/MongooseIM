@@ -3,7 +3,7 @@
           opts
          }).
 
--record(muc_online_room, {name_host,
+-record(muc_online_room, {name_host :: jid:simple_bare_jid(),
                           pid
                          }).
 

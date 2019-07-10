@@ -573,7 +573,7 @@ wait_for_feature_after_auth({xmlstreamelement, El}, StateData) ->
     case jlib:iq_query_info(El) of
         #iq{type = set, xmlns = ?NS_BIND, sub_el = SubEl} = IQ ->
             U = StateData#state.user,
-            R1 = xml:get_path_s(SubEl, [{elem, <<"resource">>}, cdata]),
+            R1 = xml:get_path_s(SubEl, [{elem, "resource"}, cdata]),
             R = case jid:resourceprep(R1) of
                     error -> error;
                     <<>> -> generate_random_resource();
@@ -1378,10 +1378,10 @@ handle_broadcast_result(_Acc, {new_state, NewState}, StateName, _StateData) ->
     fsm_next_state(StateName, NewState).
 
 privacy_list_push_iq(PrivListName) ->
-    #iq{type = set, xmlns = ?NS_PRIVACY,
+    #iq{type = <<"set">>, xmlns = ?NS_PRIVACY,
         id = <<"push", (mongoose_bin:gen_from_crypto())/binary>>,
         sub_el = [#xmlel{name = <<"query">>,
-                         attrs = [{<<"xmlns">>, ?NS_PRIVACY}],
+                         attrs = [{"xmlns", ?NS_PRIVACY}],
                          children = [#xmlel{name = <<"list">>,
                                             attrs = [{<<"name">>, PrivListName}]}]}]}.
 

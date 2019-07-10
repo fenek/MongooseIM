@@ -5,7 +5,7 @@
                  direction   :: before | aft | undefined,
                 %% id is empty, if cdata does not exist
                  id          :: binary() | integer() | undefined,
-                 index       :: non_neg_integer() | undefined | error
+                 index       :: binary() | undefined
                 }).
 
 -record(rsm_out, {count :: non_neg_integer() | undefined,

@@ -78,8 +78,8 @@
         location := location(),
         lserver := jid:lserver(),
         element := exml:element() | undefined,
-        from_jid => jid:jid() | undefined, % optional
-        to_jid => jid:jid() | undefined % optional
+        from_jid := jid:jid() | undefined,
+        to_jid := jid:jid() | undefined
        }.
 
 -type strip_params() :: #{

@@ -15,19 +15,11 @@
 %%% API
 %%%===================================================================
 
--spec cmd(iolist()) -> undefined
-                       | binary()
-                       | [binary() | [binary() | integer()] | integer() | {'error', _}]
-                       | integer()
-                       | {'error', _}.
+-spec cmd(iolist()) -> iolist() | integer().
 cmd(Cmd) ->
     cmd(Cmd, 5000).
 
--spec cmds([iolist()]) -> undefined
-                          | binary()
-                          | [binary() | [binary() | integer()] | integer() | {'error', _}]
-                          | integer()
-                          | {'error', _}.
+-spec cmds([iolist()]) -> iolist() | integer().
 cmds(Cmd) ->
     cmds(Cmd, 5000).
 
